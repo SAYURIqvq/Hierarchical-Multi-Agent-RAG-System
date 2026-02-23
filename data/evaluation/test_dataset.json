@@ -1,0 +1,34 @@
+{
+    "test_cases": [
+      {
+        "question": "What is artificial intelligence?",
+        "ground_truth": "Artificial intelligence is the simulation of human intelligence processes by machines, especially computer systems.",
+        "difficulty": "easy",
+        "category": "definition"
+      },
+      {
+        "question": "What are the main types of machine learning?",
+        "ground_truth": "The main types of machine learning are supervised learning, unsupervised learning, and reinforcement learning.",
+        "difficulty": "medium",
+        "category": "explanation"
+      },
+      {
+        "question": "How does deep learning differ from traditional machine learning?",
+        "ground_truth": "Deep learning uses neural networks with multiple layers to automatically learn features from data, while traditional machine learning often requires manual feature engineering.",
+        "difficulty": "medium",
+        "category": "comparison"
+      },
+      {
+        "question": "What is the purpose of RAG in AI systems?",
+        "ground_truth": "Retrieval-Augmented Generation (RAG) combines information retrieval with language generation to provide accurate, contextual answers by grounding responses in retrieved documents.",
+        "difficulty": "hard",
+        "category": "concept"
+      },
+      {
+        "question": "Describe the training process for neural networks.",
+        "ground_truth": "Neural network training involves forward propagation to compute predictions, calculating loss, backward propagation to compute gradients, and updating weights using optimization algorithms like gradient descent.",
+        "difficulty": "hard",
+        "category": "process"
+      }
+    ]
+  }
