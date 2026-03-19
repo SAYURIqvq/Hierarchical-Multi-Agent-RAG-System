@@ -1,0 +1,77 @@
+{
+  "test_cases": [
+    {
+      "id": 1,
+      "query": "What is this document about?",
+      "type": "summary",
+      "expected_keywords": ["about", "document", "content"],
+      "difficulty": "easy"
+    },
+    {
+      "id": 2,
+      "query": "Summarize the main points",
+      "type": "summary",
+      "expected_keywords": ["main", "points", "summary"],
+      "difficulty": "easy"
+    },
+    {
+      "id": 3,
+      "query": "What are the key findings?",
+      "type": "analytical",
+      "expected_keywords": ["findings", "results", "conclusion"],
+      "difficulty": "medium"
+    },
+    {
+      "id": 4,
+      "query": "Give me specific details about [topic]",
+      "type": "detailed",
+      "expected_keywords": ["details", "specific", "information"],
+      "difficulty": "medium"
+    },
+    {
+      "id": 5,
+      "query": "How does this relate to [concept]?",
+      "type": "relational",
+      "expected_keywords": ["relate", "connection", "relationship"],
+      "difficulty": "hard"
+    },
+    {
+      "id": 6,
+      "query": "What is quantum computing?",
+      "type": "not_found",
+      "expected_keywords": ["not", "information", "found"],
+      "difficulty": "easy",
+      "should_fail": true
+    },
+    {
+      "id": 7,
+      "query": "",
+      "type": "empty",
+      "expected_keywords": [],
+      "difficulty": "easy",
+      "should_error": true
+    },
+    {
+      "id": 8,
+      "query": "a",
+      "type": "too_short",
+      "expected_keywords": [],
+      "difficulty": "easy",
+      "should_handle": true
+    },
+    {
+      "id": 9,
+      "query": "What is the methodology used in this research paper? Can you explain the experimental design, sample size, statistical analysis methods, and limitations of the study?",
+      "type": "complex",
+      "expected_keywords": ["methodology", "research", "analysis"],
+      "difficulty": "hard"
+    },
+    {
+      "id": 10,
+      "query": "List all the references mentioned",
+      "type": "extraction",
+      "expected_keywords": ["references", "citations", "sources"],
+      "difficulty": "medium"
+    }
+  ]
+}

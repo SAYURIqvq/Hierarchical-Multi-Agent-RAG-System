@@ -1,0 +1,36 @@
+{
+  "timestamp": "2025-12-15T11:42:18.146125",
+  "tests_run": 9,
+  "tests_passed": 7,
+  "tests_failed": 0,
+  "details": [
+    {
+      "test": "Load PDF",
+      "status": "PASS",
+      "chars": 7295
+    },
+    {
+      "test": "Chunking",
+      "status": "PASS",
+      "chunks": 12,
+      "has_overlap": true
+    },
+    {
+      "test": "Query embedding",
+      "status": "PASS",
+      "dimensions": 1536
+    },
+    {
+      "test": "Vector search",
+      "status": "PASS",
+      "results": 2,
+      "top_score": 0.800438667424836
+    },
+    {
+      "test": "Answer generation",
+      "status": "PASS",
+      "answer_length": 94,
+      "citations": 1
+    }
+  ]
+}
