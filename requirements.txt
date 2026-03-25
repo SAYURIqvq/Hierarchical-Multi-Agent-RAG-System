@@ -1,0 +1,81 @@
+# ============================================
+# CORE LLM & ORCHESTRATION
+# ============================================
+anthropic>=0.25.0
+langchain==0.3.0
+langchain-anthropic==0.3.0
+langchain-core==0.3.63          # ← PINNED for compatibility
+langsmith==0.1.147              # ← PINNED for compatibility
+langgraph==0.2.45               # ← DOWNGRADED for compatibility
+langgraph-checkpoint>=2.0.0     # ← State management
+langgraph-sdk>=0.1.0            # ← SDK utilities
+
+# ============================================
+# EMBEDDINGS & RETRIEVAL
+# ============================================
+langchain-voyageai==0.2.0
+voyageai==0.3.6
+rank-bm25>=0.2.2                # ← Keyword search (BM25)
+cohere>=5.0.0                   # ← Reranking (optional)
+
+# ============================================
+# VECTOR DATABASE
+# ============================================
+chromadb==1.3.7
+protobuf>=4.21.0,<5.0.0         # ← ChromaDB dependency
+
+# ============================================
+# DOCUMENT PROCESSING
+# ============================================
+pypdf==3.17.0                   # ← PDF loading
+python-docx>=1.0.0              # ← DOCX loading
+tiktoken==0.7.0                 # ← Token counting
+langchain-text-splitters>=0.3.0 # ← Text chunking
+
+# ============================================
+# KNOWLEDGE GRAPH
+# ============================================
+networkx>=3.0                   # ← NEW: Graph structures
+spacy>=3.5.0                    # ← NEW: NER for entity extraction
+
+# ============================================
+# MATH & VECTORS
+# ============================================
+numpy>=1.24.0
+
+# ============================================
+# CONFIGURATION & UTILS
+# ============================================
+python-dotenv==1.0.0
+pydantic>=2.0.0                 # ← NEW: Data validation
+pydantic-settings>=2.0.0        # ← NEW: Settings management
+
+# ============================================
+# WEB UI
+# ============================================
+streamlit>=1.28.0
+pyarrow==14.0.1                 # ← Streamlit dependency
+
+# ============================================
+# DATABASE (Optional - if using PostgreSQL)
+# ============================================
+psycopg2-binary>=2.9.9
+sqlalchemy>=2.0.23
+alembic>=1.13.0
+
+# ============================================
+# LOCAL EMBEDDINGS (Optional - if not using Voyage AI)
+# ============================================
+sentence-transformers>=2.2.0
+
+# ============================================
+# DEVELOPMENT & TESTING
+# ============================================
+pytest>=7.0.0
+black>=23.0.0
+
+# ============================================
+# Evaluation
+# ============================================
+ragas==0.1.16
+datasets>=2.16.1
