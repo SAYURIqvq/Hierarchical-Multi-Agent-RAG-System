@@ -1,50 +1,52 @@
-# 🤖 Agentic RAG System
+# Agentic RAG System
 
-**Advanced Multi-Agent RAG with Self-Reflection, GraphRAG, and Adaptive Reasoning**
+**基于 Self-Reflection、GraphRAG 与 Adaptive Reasoning 的 Multi-Agent RAG 系统**
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://img.shields.io/badge/tests-82%20passing-brightgreen.svg)]()
 [![Coverage](https://img.shields.io/badge/coverage-92%25-green.svg)]()
 
-An intelligent document Q&A system that goes beyond traditional RAG by implementing a hierarchical multi-agent architecture with self-reflection, graph-based reasoning, and adaptive query strategies.
+一个智能文档问答系统，通过引入 hierarchical multi-agent architecture、self-reflection、graph-based reasoning 以及 adaptive query strategies，突破传统 RAG 的能力边界。
 
 ---
 
-## 🎯 What Makes This Different?
+## 不一样的地方
 
-**Traditional RAG (95% of implementations):**
+** 传统 RAG (95% 的实现):**
 ```
 Query → Retrieve chunks → Generate answer
 
-❌ Fixed pipeline, no intelligence
-❌ No quality checks on retrieval or generation
-❌ Cannot reason about relationships between entities
-❌ Hallucinations go undetected
+❌ 固定流程，缺乏智能决策能力
+❌ 对 retrieval 和 generation 没有质量校验
+❌ 无法对实体之间的关系进行推理
+❌ hallucination 无法被检测
 ```
 
-**Agentic RAG (this project):**
+**Agentic RAG (本项目):**
 ```
-Query → Planner analyzes complexity
-      → Adaptive retrieval (vector + keyword + graph in parallel)
-      → Validator checks retrieval quality, retries if needed
-      → Writer generates answer grounded strictly in context
-      → Critic reviews quality, triggers regeneration if needed
-      → Final answer with full citation trail
+Query → Planner 分析复杂度
+      → Adaptive retrieval（vector + keyword + graph 并行）
+      → Validator 检查 retrieval 质量，不足则重试
+      → Writer 基于上下文严格生成答案
+      → Critic 评估结果质量，必要时触发重生成
+      → 输出带完整 citation 的最终答案
 
-✅ Adaptive decisions based on query complexity
-✅ Self-reflection with automatic quality correction
-✅ Relationship reasoning via knowledge graphs
-✅ Zero hallucination — Faithfulness 1.000 on RAGAS
-✅ Honest when information is not available
+✅ 根据 query complexity 进行自适应决策
+✅ 通过 self-reflection 实现自动纠错
+✅ 基于 knowledge graph 的关系推理能力
+✅ 无 hallucination —— RAGAS Faithfulness = 1.000
+✅ 在信息缺失时能够诚实返回不可回答
 ```
 
 ---
 
-## 📊 RAGAS Evaluation Results
+##  RAGAS 评测结果
 
-Evaluated using the industry-standard **RAGAS framework**. LLM judge: Claude. Embeddings: Voyage AI.
-Answers were **generated at runtime** by the WriterAgent — not hand-written — so scores reflect real system output.
+基于行业标准的 **RAGAS framework** 进行评估。 
+LLM judge: Claude. 
+Embeddings: Voyage AI.
+所有答案均由 WriterAgent 在运行时生成（非人工编写），因此评分真实反映系统表现。
 
 | Test Case | Scenario | Faithfulness | Relevancy | Precision | Recall | Overall |
 |-----------|----------|:------------:|:---------:|:---------:|:------:|:-------:|
@@ -388,12 +390,6 @@ Coverage: **92%** across core modules. All 82 tests green.
 
 ---
 
-## 📄 License
-
-MIT License — see [LICENSE](LICENSE)
-
----
-
 ## 🙏 Acknowledgments
 
 - **Anthropic** — Claude 3.5 Sonnet
@@ -403,9 +399,3 @@ MIT License — see [LICENSE](LICENSE)
 - **RAGAS** — Evaluation framework
 
 ---
-
-## 📧 Contact
-
-- **GitHub:** [Jihaad2021](https://github.com/Jihaad2021)
-- **LinkedIn:** [jihaad-arief-pangestu](https://linkedin.com/in/jihaad-arief-pangestu)
-- **Email:** jihaadariefpangestu@gmail.com
