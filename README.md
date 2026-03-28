@@ -13,7 +13,7 @@
 
 ## 不一样的地方
 
-** 传统 RAG (95% 的实现):**
+**传统 RAG (95% 的实现):**
 ```
 Query → Retrieve chunks → Generate answer
 
