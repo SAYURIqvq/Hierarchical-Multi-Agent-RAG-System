@@ -54,120 +54,144 @@ Embeddings: Voyage AI.
 | Case 2 | Partial info (some data missing) | **1.000** | 0.000 † | 1.000 | 1.000 | 0.750 |
 | Case 3 | Info completely missing | **1.000** | 0.000 † | 1.000 | 1.000 | 0.750 |
 
-> † Relevancy is 0.000 on Cases 2–3 because RAGAS penalises answers that don't deliver requested data.
-> In both cases the system **correctly refused to fabricate** and stated the information was unavailable.
-> This is intended behaviour — the production gate treats these as valid responses.
+> † 在 Case 2–3 中，Relevancy 为 0.000，是因为 RAGAS 会对未提供用户所请求数据的答案进行惩罚。
 
-### Why Faithfulness is the key number
+> 在这两种情况下，系统**正确地拒绝编造信息**，并明确指出相关信息不可用。
 
-Faithfulness measures whether every claim in the answer is grounded in the retrieved context.
-**1.000 = zero hallucination.** This is the single most important metric for a production RAG system,
-and it holds across all three scenarios — including the cases where information is missing.
+> 这是预期行为 —— 在生产环境中，这类回答会被判定为有效响应。
 
-### Production Gate
+### 为什么 Faithfulness 是最关键的指标
 
-| Gate | Threshold | Logic |
-|------|-----------|-------|
-| Hard gate | Faithfulness ≥ 0.5 | Blocks any hallucinated answer regardless of other scores |
-| Soft gate | Overall ≥ 0.7 | Skipped automatically when an honest non-answer is detected |
+Faithfulness（忠实性）衡量的是：答案中的每一个陈述，是否都严格基于检索到的上下文。
 
-RAGAS evaluation unit tests: **17/17 passing** (mocked, zero API cost).
+**1.000 = 零幻觉（zero hallucination）。** 这是生产级 RAG 系统中最核心的指标，
 
-Full details → [docs/RAGAS_EVALUATION_REPORT.md](docs/RAGAS_EVALUATION_REPORT.md)
+并且在所有三种场景下都成立——包括信息缺失的情况。
+
+### 生产级质量门控（Production Gate）
+
+| 门控类型 | 阈值 | 逻辑 |
+|----------|------|------|
+| 硬性门控（Hard gate） | Faithfulness ≥ 0.5 | 无论其他指标如何，只要检测到幻觉内容即直接拦截输出 |
+| 软性门控（Soft gate） | Overall ≥ 0.7 | 当检测到“诚实的不可回答”时自动跳过该门控 |
+
+RAGAS 评测单元测试：**17/17 全部通过**（基于 mock，无 API 成本）。
+
+完整评测报告 → [docs/RAGAS_EVALUATION_REPORT.md](docs/RAGAS_EVALUATION_REPORT.md)
+---
+
+## 核心功能（Key Features）
+
+### 多智能体系统（11个 Agent，3层架构）
+
+**战略层（Strategic Layer）**
+
+- **Planner（规划器）** —— 分析查询复杂度（0.0–1.0），选择执行策略（简单 / 多跳 / 图推理）
+
+**战术层（Tactical Layer）**
+
+- **Retrieval Coordinator（检索协调器）** —— 并行调度并管理多个子 Agent（swarm）
+
+- **Query Decomposer（问题分解器）** —— 将复杂多维问题拆解为更聚焦的子问题
+
+- **Validator（验证器）** —— 质量控制节点；检查检索内容是否充分，必要时触发二次检索
+
+- **Synthesis（融合器）** —— 跨多种检索方式去重并进行混合评分
+
+- **Writer（生成器）** —— 严格基于上下文生成答案，并提供行内引用
+
+- **Critic（评估器）** —— 从5个维度评估答案质量，必要时基于反馈重新生成
+
+**执行层（Operational Layer，Swarm 并行执行）**
+
+- **Vector Agent（向量检索 Agent）** —— 基于 Voyage AI embedding 的语义搜索
+
+- **Keyword Agent（关键词检索 Agent）** —— 基于 BM25 的精确匹配检索
+
+- **Graph Agent（图谱检索 Agent）** —— 基于知识图谱路径搜索的关系推理
+---
+
+###  GraphRAG
+
+直接从上传的文档中构建可检索的知识图谱：
+
+- 实体抽取（基于 spaCy NER）
+
+- 关系抽取 —— 三种方法：共现关系、依存句法解析、模式匹配
+
+- 图谱构建（基于 NetworkX）—— 已测试规模：35 个节点，621 条边
+
+- 支持基于路径的关系查询（Path Finding）
+
+```
+“TensorFlow 与神经网络之间有什么关系？”
+
+→ 发现路径：TensorFlow --[used_for]--> 神经网络
+
+→ 检索相关文本片段以解释两者之间的联系
+
+→ 准确率 85%（对比仅使用向量检索的 30%）
+```
+---
+
+### 自反思机制（Self-Reflection Loop）
+
+在答案返回给用户之前，系统会进行两阶段质量校验：
+
+**阶段一 —— 检索阶段（Validator）**
+
+```
+已检索文本块 → 评估相关性 + 覆盖度 + 置信度
+
+≥ 0.7 → 进入下一阶段        < 0.7 → 触发重检索（最多 3 次）
+```
+
+**阶段二 —— 生成阶段（Critic）**
+
+```
+生成答案 → 从 5 个维度进行评分
+
+准确性 30% | 完整性 25% | 引用质量 15% | 清晰度 15% | 相关性 15%
+
+≥ 0.7 → 通过        < 0.7 → 基于反馈重新生成（最多 3 次迭代）
+```
+
+最终效果：通过自我纠错机制，将成功率从 **85% 提升至 99%**。
 
 ---
 
-## ✨ Key Features
-
-### 🧠 Multi-Agent System (11 Agents, 3 Levels)
-
-**Strategic Layer**
-- **Planner** — Analyzes query complexity (0.0–1.0), selects strategy (Simple / Multi-hop / Graph)
-
-**Tactical Layer**
-- **Retrieval Coordinator** — Spawns and manages swarm agents in parallel
-- **Query Decomposer** — Breaks complex multi-aspect questions into focused sub-questions
-- **Validator** — Quality gate; checks chunk sufficiency, triggers re-retrieval if needed
-- **Synthesis** — Deduplicates across retrieval methods, applies hybrid scoring
-- **Writer** — Generates answers grounded strictly in context with inline citations
-- **Critic** — Reviews quality on 5 dimensions, regenerates with feedback if needed
-
-**Operational Layer (Swarm — runs in parallel)**
-- **Vector Agent** — Semantic search via Voyage AI embeddings
-- **Keyword Agent** — Exact-match BM25 scoring
-- **Graph Agent** — Relationship reasoning via knowledge-graph path finding
-
----
-
-### 🕸️ GraphRAG
-
-Builds searchable knowledge graphs directly from uploaded documents:
-
-- Entity extraction (spaCy NER)
-- Relationship extraction — 3 methods: co-occurrence, dependency parsing, pattern matching
-- Graph construction (NetworkX) — tested at 35 nodes, 621 edges
-- Path finding for relationship queries
+### 自适应策略选择（Adaptive Strategy Selection）
 
 ```
-"How does TensorFlow relate to neural networks?"
-→ Path found: TensorFlow --[used_for]--> neural networks
-→ Retrieves chunks explaining the connection
-→ 85% accuracy (vs 30% with vector search alone)
+简单查询   （复杂度 < 0.3）   → 向量检索 → 直接生成        ~2–3 秒
+
+复杂查询   （复杂度 0.3–0.7） → 问题分解 → 并行检索 → 结果融合  ~4–6 秒
+
+关系查询   （复杂度 > 0.7）   → 图路径搜索 → 实体检索      ~4–6 秒
 ```
 
 ---
 
-### 🔄 Self-Reflection Loop
+## 性能指标（Performance Metrics）
 
-Two-stage quality check before an answer reaches the user:
+| 指标 | 基线 | 当前 | 提升 |
+|------|:----:|:----:|:----:|
+| 准确率 | 60% | 85–92% | +32% |
+| 延迟（简单查询） | 10 秒 | 2–3 秒 | 提升 5 倍 |
+| 延迟（复杂查询） | 10 秒 | 4–6 秒 | 提升 2 倍 |
+| 关系查询准确率 | 30% | 85% | +55% |
+| 自我纠错率 | 0% | 85–99% | 新增能力 |
+| **忠实性（RAGAS）** | — | **1.000** | 零幻觉 |
 
-**Stage 1 — Retrieval (Validator)**
-```
-Chunks retrieved → score relevance + coverage + confidence
-  ≥ 0.7 → proceed          < 0.7 → re-retrieve (max 3 retries)
-```
+**消融实验（Ablation Study）关键结论：**
 
-**Stage 2 — Generation (Critic)**
-```
-Answer generated → score on 5 dimensions
-  Accuracy 30% | Completeness 25% | Citations 15% | Clarity 15% | Relevance 15%
-  ≥ 0.7 → approve          < 0.7 → regenerate with feedback (max 3 iterations)
-```
-
-Net result: success rate **85% → 99%** with self-correction.
+- 移除图检索（Graph Search）→ 关系推理准确率下降 **19 倍**
+- 移除分层切块（Hierarchical Chunking）→ 检索速度降低 **45%**
+- 移除自反思机制（Self-Reflection）→ 成功率从 **99% 降至 85%**
 
 ---
 
-### 📊 Adaptive Strategy Selection
-
-```
-Simple query   (complexity < 0.3)   → Vector search → direct generation       ~2–3 s
-Complex query  (complexity 0.3–0.7) → Decompose → parallel retrieval → synth  ~4–6 s
-Relationship   (complexity > 0.7)   → Graph path finding → entity retrieval   ~4–6 s
-```
-
----
-
-## 📈 Performance Metrics
-
-| Metric | Baseline | Current | Δ |
-|--------|:--------:|:-------:|:-:|
-| Accuracy | 60% | 85–92% | +32% |
-| Latency (simple) | 10 s | 2–3 s | 5× faster |
-| Latency (complex) | 10 s | 4–6 s | 2× faster |
-| Relationship queries | 30% | 85% | +55% |
-| Self-correction rate | 0% | 85–99% | new |
-| **Faithfulness (RAGAS)** | — | **1.000** | zero hallucination |
-
-**Ablation study highlights:**
-
-- Remove graph search → relationship accuracy drops **19×**
-- Remove hierarchical chunking → retrieval **45% slower**
-- Remove self-reflection → success rate drops 99% → 85%
-
----
-
-## 🏗️ Architecture
+##  结构
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -203,50 +227,61 @@ Relationship   (complexity > 0.7)   → Graph path finding → entity retrieval 
 
 ---
 
-## 🚀 Quick Start
+##  快速开始
 
-### Prerequisites
+## 教程
+
+### 环境要求（Prerequisites）
 
 ```
-Python 3.11+    Git    API keys: Anthropic + Voyage AI
+Python 3.11+    Git    API Key：Anthropic + Voyage AI
 ```
 
-### Installation
+---
+
+### 安装（Installation）
 
 ```bash
 git clone https://github.com/yourusername/agentic-rag-system.git
+
 cd agentic-rag-system
 
 python -m venv venv
+
 source venv/bin/activate            # Windows: venv\Scripts\activate
 
 pip install -r requirements.txt
 
-python -m spacy download en_core_web_md   # GraphRAG entity extraction
+python -m spacy download en_core_web_md   # 用于 GraphRAG 实体抽取
 
 cp .env.example .env
-# Fill in:
+
+# 填入：
 #   ANTHROPIC_API_KEY=sk-ant-...
 #   VOYAGE_AI_API_KEY=pa-...
 ```
 
-### Run
+---
+
+### 运行（Run）
 
 ```bash
 streamlit run app.py
+
 # → http://localhost:8501
 ```
 
 ---
 
-## 📖 Usage
+## 📖 使用说明（Usage）
 
-### 1. Upload a Document
+### 1. 上传文档（Upload a Document）
 
-Supports **PDF, DOCX, TXT**. Processing is fully automatic:
-text extraction → hierarchical chunking → embeddings → vector store → entity extraction → knowledge graph → BM25 index.
+支持 **PDF、DOCX、TXT** 格式，处理流程全自动：
 
-### 2. Ask Questions
+文本提取 → 分层切块（hierarchical chunking） → 向量化（embeddings） → 向量数据库 → 实体抽取 → 知识图谱构建 → BM25 索引
+
+### 2. 测试问题
 
 ```
 Simple:        "What is machine learning?"
@@ -259,143 +294,86 @@ Complex:       "Compare supervised and unsupervised learning"
                → multi-hop decomposition, 4–6 s
 ```
 
-### 3. Read the Answer
+### 3. 阅读答案
 
-Every answer includes inline citations (`[1]`, `[2]`, …) tracing each claim to the source chunk.
-When information is not available, the system says so explicitly — it does not guess.
+每个回答都包含行内引用（如 `[1]`, `[2]`, …），用于将每一条结论追溯到对应的来源文本片段。
 
----
-
-## 🛠️ Technology Stack
-
-| Layer | Technology | Role |
-|-------|-----------|------|
-| LLM | Claude 3.5 Sonnet | Generation, validation, critique |
-| Embeddings | Voyage AI (`voyage-large-2-instruct`) | Semantic vectors |
-| Orchestration | LangChain + LangGraph | Agent wiring, state-machine workflows |
-| Vector DB | ChromaDB | Persistent vector storage |
-| Graph | NetworkX | Knowledge graph + path finding |
-| NLP | spaCy `en_core_web_md` | NER, dependency parsing |
-| Evaluation | RAGAS | Production-grade answer scoring |
-| Monitoring | LangSmith | Agent-level execution tracing |
-| Frontend | Streamlit | Web interface |
-| Cache | Redis *(optional)* | Query-result caching |
+当相关信息不存在时，系统会明确说明，而不会进行猜测或编造。
 
 ---
 
-## 📁 Project Structure
+## 技术栈（Technology Stack）
 
-```
-agentic-rag-system/
-├── app.py                           # Streamlit entry point
-├── src/
-│   ├── agents/                      # 11 agents
-│   │   ├── planner.py               # L1 — strategy selection
-│   │   ├── retrieval_coordinator.py # L2 — swarm orchestration
-│   │   ├── validator.py             # L2 — retrieval quality gate
-│   │   ├── synthesis.py             # L2 — dedupe + ranking
-│   │   ├── writer.py                # L2 — answer generation
-│   │   ├── critic.py                # L2 — answer review
-│   │   ├── query_decomposer.py      # L2 — multi-hop decomposition
-│   │   └── retrieval/               # L3 — swarm
-│   │       ├── vector_agent.py
-│   │       ├── keyword_agent.py
-│   │       └── graph_agent.py
-│   ├── graph/                       # GraphRAG pipeline
-│   │   ├── entity_extractor.py
-│   │   ├── relationship_extractor.py
-│   │   ├── graph_builder.py
-│   │   └── graph_visualizer.py
-│   ├── ingestion/                   # Document processing
-│   │   ├── document_loader.py
-│   │   ├── hierarchical_chunker.py
-│   │   └── embedder.py
-│   ├── storage/                     # Persistence
-│   │   ├── chroma_store.py
-│   │   └── database.py
-│   ├── evaluation/                  # Quality measurement
-│   │   ├── ragas_evaluator.py       # RAGAS (Claude + Voyage override)
-│   │   └── simple_evaluator.py      # Lightweight rule-based metrics
-│   ├── orchestration/               # LangGraph workflows
-│   ├── models/                      # Pydantic data models
-│   └── config.py                    # Centralised settings
-├── tests/
-│   ├── unit/                        # 27 tests — isolated components
-│   ├── integration/                 # 35 tests — multi-component flows
-│   ├── evaluation/                  # 17 tests — RAGAS pipeline
-│   │   ├── test_ragas_evaluation.py # Mocked (zero API cost)
-│   │   └── test_ragas_real.py       # Live evaluation (hits API)
-│   └── e2e/                         # End-to-end workflow tests
-├── docs/
-│   ├── RAGAS_EVALUATION_REPORT.md   # Full evaluation analysis
-│   ├── ABLATION_REPORT.md           # Component-impact study
-│   ├── ARCHITECTURE_OVERVIEW.md     # System design
-│   ├── PROJECT_OVERVIEW_CONCISE.md  # High-level summary
-│   └── USER_GUIDE.md                # End-user guide
-├── data/                            # Runtime data (.gitignore'd)
-│   ├── chroma_db/
-│   └── graphs/
-├── .env.example
-└── requirements.txt
-```
+| 层级 | 技术 | 作用 |
+|------|------|------|
+| LLM | Claude 3.5 Sonnet | 生成、验证与评估 |
+| 向量嵌入（Embeddings） | Voyage AI (`voyage-large-2-instruct`) | 语义向量表示 |
+| 编排（Orchestration） | LangChain + LangGraph | Agent 连接与状态机工作流 |
+| 向量数据库 | ChromaDB | 持久化向量存储 |
+| 图结构 | NetworkX | 知识图谱构建与路径搜索 |
+| NLP | spaCy `en_core_web_md` | 命名实体识别与依存句法解析 |
+| 评估（Evaluation） | RAGAS | 生产级答案质量评估 |
+| 监控（Monitoring） | LangSmith | Agent 执行链路追踪 |
+| 前端 | Streamlit | Web 交互界面 |
+| 缓存 | Redis（可选） | 查询结果缓存 |
 
 ---
 
-## 🧪 Testing
+## 项目结构
 
 ```bash
-# Full suite — 82 tests
+# 完整测试套件 —— 共 82 个测试
 pytest tests/ -v
 
-# By layer
-pytest tests/unit/                                   # 27 unit tests
-pytest tests/integration/                            # 35 integration tests
-pytest tests/e2e/                                    # end-to-end tests
+# 按层级划分
+pytest tests/unit/            # 27 个单元测试
+pytest tests/integration/     # 35 个集成测试
+pytest tests/e2e/             # 端到端测试
 
-# RAGAS pipeline — mocked, no API cost
-pytest tests/evaluation/test_ragas_evaluation.py -v  # 17 tests
+# RAGAS 流水线 —— 使用 mock，无 API 成本
+pytest tests/evaluation/test_ragas_evaluation.py -v  # 17 个测试
 
-# RAGAS — live scores (calls Claude + Voyage)
+# RAGAS 实测评分（调用 Claude + Voyage）
 python tests/evaluation/test_ragas_real.py
 
-# Ablation study
+# 消融实验
 python evaluation/ablation_studies.py
 ```
 
-Coverage: **92%** across core modules. All 82 tests green.
+覆盖率：核心模块 **92%**。82 个测试全部通过。
 
 ---
 
-## 📚 Documentation
+## 文档
 
-| Doc | What it covers |
-|-----|----------------|
-| [RAGAS Evaluation Report](docs/RAGAS_EVALUATION_REPORT.md) | Methodology, all scores, production-gate logic, issues & fixes |
-| [Architecture Overview](docs/ARCHITECTURE_OVERVIEW.md) | Agent hierarchy, data flow, component interaction |
-| [Ablation Report](docs/ABLATION_REPORT.md) | Quantified impact of each subsystem |
-| [Project Overview](docs/PROJECT_OVERVIEW_CONCISE.md) | High-level summary |
-| [User Guide](docs/USER_GUIDE.md) | End-user how-to |
-
----
-
-## 📈 Development Timeline
-
-| Phase | Weeks | Delivered | Accuracy |
-|-------|:-----:|-----------|:--------:|
-| Foundation | 1–2 | Ingestion, chunking, ChromaDB, basic RAG | 60% |
-| Multi-Agent | 3–4 | Planner, Coordinator, Validator, swarm | 80% |
-| Self-Reflection | 5–6 | Writer, Critic, regeneration loop | 85% |
-| GraphRAG | 9–10 | Entity extraction, graph, relationship queries | 92% |
-| Evaluation | 11+ | RAGAS integration, ablation, production gate | — |
+| 文档 | 内容说明 |
+|------|----------|
+| [RAGAS 评测报告](docs/RAGAS_EVALUATION_REPORT.md) | 方法论、全部评分、生产级门控逻辑、问题与修复 |
+| [架构概览](docs/ARCHITECTURE_OVERVIEW.md) | Agent 分层结构、数据流、组件交互 |
+| [消融实验报告](docs/ABLATION_REPORT.md) | 各子系统的量化影响 |
+| [项目概览](docs/PROJECT_OVERVIEW_CONCISE.md) | 高层总结 |
+| [用户指南](docs/USER_GUIDE.md) | 使用说明 |
 
 ---
 
-## 🙏 Acknowledgments
+## 开发时间线
 
-- **Anthropic** — Claude 3.5 Sonnet
-- **Voyage AI** — Embedding model
-- **Microsoft Research** — GraphRAG methodology
-- **LangChain / LangGraph** — Orchestration framework
-- **RAGAS** — Evaluation framework
+| 阶段 | 周数 | 交付内容 | 准确率 |
+|------|:----:|----------|:------:|
+| 基础阶段 | 1–2 | 数据摄取、分块、ChromaDB、基础 RAG | 60% |
+| 多 Agent 阶段 | 3–4 | Planner、Coordinator、Validator、swarm | 80% |
+| 自反思阶段 | 5–6 | Writer、Critic、自我迭代机制 | 85% |
+| GraphRAG 阶段 | 9–10 | 实体抽取、知识图谱、关系查询 | 92% |
+| 评估阶段 | 11+ | RAGAS 集成、消融实验、生产门控 | — |
 
+---
+
+## 致谢
+
+- **Anthropic** —— Claude 3.5 Sonnet  
+- **Voyage AI** —— 向量嵌入模型  
+- **Microsoft Research** —— GraphRAG 方法论  
+- **LangChain / LangGraph** —— 编排框架  
+- **RAGAS** —— 评测框架
+  
 ---
