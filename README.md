@@ -82,7 +82,7 @@ RAGAS 评测单元测试：**17/17 全部通过**（基于 mock，无 API 成本
 
 ## 核心功能（Key Features）
 
-### 多智能体系统（11个 Agent，3层架构）
+### 多智能体系统（10个 Agent，3层架构）
 
 **战略层（Strategic Layer）**
 
