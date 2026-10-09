@@ -82,9 +82,8 @@ class AblationStudy:
     
     def hybrid_retrieval(self, query: str, top_k: int = 10) -> Dict:
         """+ Hybrid search (vector + keyword)."""
-        # For now, same as hierarchical (keyword not integrated)
-        # Future: Add BM25 results
-        return self.hierarchical_retrieval(query, top_k)
+        return {'method': 'hybrid', 'chunks': 0, 'time': 0,
+                'avg_score': 0, 'error': 'Not implemented in this experiment'}
     
     def graph_retrieval(self, query: str, top_k: int = 5) -> Dict:
         """+ Graph search."""
@@ -146,6 +145,7 @@ class AblationStudy:
             # Test 1: Baseline
             print("\n1️⃣ Baseline (flat chunks, vector only)")
             baseline = self.baseline_retrieval(query)
+            baseline['query'] = query
             results['baseline'].append(baseline)
             print(f"   Chunks: {baseline['chunks']}, "
                   f"Time: {baseline['time']:.2f}s, "
@@ -154,6 +154,7 @@ class AblationStudy:
             # Test 2: Hierarchical
             print("\n2️⃣ + Hierarchical Chunking")
             hierarchical = self.hierarchical_retrieval(query)
+            hierarchical['query'] = query
             results['hierarchical'].append(hierarchical)
             improvement = ((hierarchical['avg_score'] - baseline['avg_score']) 
                           / baseline['avg_score'] * 100) if baseline['avg_score'] > 0 else 0
@@ -162,15 +163,17 @@ class AblationStudy:
                   f"Avg Score: {hierarchical['avg_score']:.3f} "
                   f"({improvement:+.1f}%)")
             
-            # Test 3: Hybrid (same as hierarchical for now)
+            # Test 3: Explicitly unimplemented hybrid experiment
             print("\n3️⃣ + Hybrid Search (vector + keyword)")
             hybrid = self.hybrid_retrieval(query)
+            hybrid['query'] = query
             results['hybrid'].append(hybrid)
-            print(f"   [Not yet implemented - same as hierarchical]")
+            print(f"   [Not implemented; excluded from comparisons]")
             
             # Test 4: Graph
             print("\n4️⃣ + Graph Search")
             graph = self.graph_retrieval(query)
+            graph['query'] = query
             results['graph'].append(graph)
             if 'error' not in graph:
                 print(f"   Chunks: {graph['chunks']}, "
@@ -211,28 +214,9 @@ class AblationStudy:
         
         print("="*60)
         
-        # Component impact
-        print("\n📈 COMPONENT IMPACT:\n")
-        
-        baseline_score = sum(d['avg_score'] for d in results['baseline']) / len(results['baseline'])
-        hier_score = sum(d['avg_score'] for d in results['hierarchical']) / len(results['hierarchical'])
-        
-        valid_graph = [d for d in results['graph'] if 'error' not in d and d['chunks'] > 0]
-        graph_score = sum(d['avg_score'] for d in valid_graph) / len(valid_graph) if valid_graph else 0
-        
-        print(f"1. Hierarchical Chunking:")
-        hier_impact = ((hier_score - baseline_score) / baseline_score * 100) if baseline_score > 0 else 0
-        print(f"   {hier_impact:+.1f}% improvement in avg score")
-        
-        print(f"\n2. Graph Search:")
-        if graph_score > 0:
-            graph_impact = ((graph_score - hier_score) / hier_score * 100) if hier_score > 0 else 0
-            print(f"   {graph_impact:+.1f}% improvement for relationship queries")
-            print(f"   Coverage: {len(valid_graph)}/{len(results['graph'])} queries ({len(valid_graph)/len(results['graph'])*100:.0f}%)")
-        else:
-            print(f"   No valid results")
-        
-        print("\n" + "="*60 + "\n")
+        print("Internal scores have different scales; do not interpret their ratio as accuracy.")
+        print("These five queries are exploratory diagnostics, not a quality benchmark.")
+        print("Use score_retrieval.py with shared relevance labels for comparisons.")
 
 
 def main():

@@ -1,3 +1,5 @@
+> Scope: historical results from three hand-crafted contexts, not an end-to-end retrieval benchmark. Scores and quality gates do not guarantee hallucination-free answers. See [evaluation protocol](EVALUATION_PROTOCOL.md).
+
 # RAGAS Evaluation Report — Agentic RAG System
 
 **Project:** Hierarchical Multi-Agent RAG System  
@@ -308,7 +310,7 @@ In addition to the real evaluation described above, a suite of **17 unit tests**
 
 The RAGAS evaluation confirms that the Agentic RAG system's WriterAgent meets production-quality standards for answer generation. The key findings are as follows.
 
-**Faithfulness is 1.000 across all scenarios.** The system does not hallucinate. Every claim in every generated answer is directly supported by the retrieved context. This was achieved through prompt engineering that explicitly instructs the model to never add information beyond what the context provides, and was validated by running the evaluation against answers generated at runtime, not manually written test data.
+**Faithfulness was 1.000 on the three recorded, hand-crafted-context examples.** This is a sample-level judge result, not a zero-hallucination guarantee. Every claim in every generated answer is directly supported by the retrieved context. This was achieved through prompt engineering that explicitly instructs the model to never add information beyond what the context provides, and was validated by running the evaluation against answers generated at runtime, not manually written test data.
 
 **The system correctly handles missing information.** When the context does not contain the answer to a question, the system explicitly states that the information is not available rather than fabricating a plausible response. This behavior was confirmed in both the partial-information and completely-missing-information test cases.
 
@@ -318,4 +320,4 @@ The RAGAS evaluation confirms that the Agentic RAG system's WriterAgent meets pr
 
 **Context Precision and Recall require end-to-end testing to provide actionable signal.** In this evaluation, context was hand-crafted, so both metrics scored 1.000. The next evaluation phase should run RAGAS against answers generated from real ChromaDB retrieval to measure actual retrieval pipeline quality.
 
-The evaluation pipeline is fully automated, reproducible, and integrated into the project test suite. Unit tests verify the pipeline logic offline with zero API cost, while the real evaluation script can be run manually to produce ground-truth scores whenever the WriterAgent prompt or retrieval pipeline is updated.
+The evaluation pipeline is fully automated, reproducible, and integrated into the project test suite. Unit tests verify the pipeline logic offline with zero API cost, while the real evaluation script can be run manually to produce model-judge scores whenever the WriterAgent prompt or retrieval pipeline is updated.

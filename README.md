@@ -4,8 +4,7 @@
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-82%20passing-brightgreen.svg)]()
-[![Coverage](https://img.shields.io/badge/coverage-92%25-green.svg)]()
+
 
 一个智能文档问答系统，通过引入 hierarchical multi-agent architecture、self-reflection、graph-based reasoning 以及 adaptive query strategies，突破传统 RAG 的能力边界。
 
@@ -35,7 +34,7 @@ Query → Planner 分析复杂度
 ✅ 根据 query complexity 进行自适应决策
 ✅ 通过 self-reflection 实现自动纠错
 ✅ 基于 knowledge graph 的关系推理能力
-✅ 无 hallucination —— RAGAS Faithfulness = 1.000
+✅ 提供忠实性评测和拒答机制；已记录样例的 Faithfulness 为 1.000，不能保证零幻觉。
 ✅ 在信息缺失时能够诚实返回不可回答
 ```
 
@@ -46,7 +45,7 @@ Query → Planner 分析复杂度
 基于行业标准的 **RAGAS framework** 进行评估。 
 LLM judge: Claude. 
 Embeddings: Voyage AI.
-所有答案均由 WriterAgent 在运行时生成（非人工编写），因此评分真实反映系统表现。
+答案由 WriterAgent 在运行时生成；上下文为人工构造，以下是 3 个样例的历史结果，未验证端到端检索质量，也不能推广到其他数据。
 
 | Test Case | Scenario | Faithfulness | Relevancy | Precision | Recall | Overall |
 |-----------|----------|:------------:|:---------:|:---------:|:------:|:-------:|
@@ -64,15 +63,13 @@ Embeddings: Voyage AI.
 
 Faithfulness（忠实性）衡量的是：答案中的每一个陈述，是否都严格基于检索到的上下文。
 
-**1.000 = 零幻觉（zero hallucination）。** 这是生产级 RAG 系统中最核心的指标，
-
-并且在所有三种场景下都成立——包括信息缺失的情况。
+**1.000 表示评测器在这些样本中未判定出不忠实陈述。** LLM judge 可能误判，拒答样例与可回答样例应分别统计；该结果不构成零幻觉保证。
 
 ### 生产级质量门控（Production Gate）
 
 | 门控类型 | 阈值 | 逻辑 |
 |----------|------|------|
-| 硬性门控（Hard gate） | Faithfulness ≥ 0.5 | 无论其他指标如何，只要检测到幻觉内容即直接拦截输出 |
+| 硬性门控（Hard gate） | Faithfulness ≥ 0.5 | 评分低于 0.5 时拦截；阈值仍需标注数据校准，不保证拦截所有幻觉 |
 | 软性门控（Soft gate） | Overall ≥ 0.7 | 当检测到“诚实的不可回答”时自动跳过该门控 |
 
 RAGAS 评测单元测试：**17/17 全部通过**（基于 mock，无 API 成本）。
@@ -130,7 +127,7 @@ RAGAS 评测单元测试：**17/17 全部通过**（基于 mock，无 API 成本
 
 → 检索相关文本片段以解释两者之间的联系
 
-→ 准确率 85%（对比仅使用向量检索的 30%）
+→ 展示关系检索流程；准确率需在共同标注集上测量
 ```
 ---
 
@@ -156,7 +153,7 @@ RAGAS 评测单元测试：**17/17 全部通过**（基于 mock，无 API 成本
 ≥ 0.7 → 通过        < 0.7 → 基于反馈重新生成（最多 3 次迭代）
 ```
 
-最终效果：通过自我纠错机制，将成功率从 **85% 提升至 99%**。
+自反思收益尚需固定问题集上的开关对照实验；当前不提供可复现的成功率提升结论。
 
 ---
 
@@ -172,22 +169,15 @@ RAGAS 评测单元测试：**17/17 全部通过**（基于 mock，无 API 成本
 
 ---
 
-## 性能指标（Performance Metrics）
+## 评测证据与限制
 
-| 指标 | 基线 | 当前 | 提升 |
-|------|:----:|:----:|:----:|
-| 准确率 | 60% | 85–92% | +32% |
-| 延迟（简单查询） | 10 秒 | 2–3 秒 | 提升 5 倍 |
-| 延迟（复杂查询） | 10 秒 | 4–6 秒 | 提升 2 倍 |
-| 关系查询准确率 | 30% | 85% | +55% |
-| 自我纠错率 | 0% | 85–99% | 新增能力 |
-| **忠实性（RAGAS）** | — | **1.000** | 零幻觉 |
+- 历史 RAGAS 结果：3 个手工上下文样例，仅覆盖生成与评测路径。
+- 历史检索消融：5 个问题、单次运行，没有统一相关性标注；图分数带额外奖励，不能和向量分数相除得到准确率提升。
+- 混合检索在历史消融脚本中未接入，已明确标记未实现。
+- 延迟示意值不是服务 SLA；硬件、API 模型、网络、缓存和重试都会影响结果。
+- 旧文档中的 82 个测试、92% 覆盖率等是未在本次环境复核的历史描述，不能作为当前 CI 状态。
 
-**消融实验（Ablation Study）关键结论：**
-
-- 移除图检索（Graph Search）→ 关系推理准确率下降 **19 倍**
-- 移除分层切块（Hierarchical Chunking）→ 检索速度降低 **45%**
-- 移除自反思机制（Self-Reflection）→ 成功率从 **99% 降至 85%**
+新评测流程见 [评测协议](docs/EVALUATION_PROTOCOL.md)。统一相关性指标评分器可离线运行，不调用模型 API；它验证评分方法，不代表系统已经取得相应成绩。
 
 ---
 
@@ -242,9 +232,9 @@ Python 3.11+    Git    API Key：Anthropic + Voyage AI
 ### 安装（Installation）
 
 ```bash
-git clone https://github.com/yourusername/agentic-rag-system.git
+git clone https://github.com/SAYURIqvq/Hierarchical-Multi-Agent-RAG-System.git
 
-cd agentic-rag-system
+cd Hierarchical-Multi-Agent-RAG-System
 
 python -m venv venv
 
@@ -258,7 +248,7 @@ cp .env.example .env
 
 # 填入：
 #   ANTHROPIC_API_KEY=sk-ant-...
-#   VOYAGE_AI_API_KEY=pa-...
+#   VOYAGE_API_KEY=pa-...
 ```
 
 ---
@@ -340,7 +330,7 @@ python tests/evaluation/test_ragas_real.py
 python evaluation/ablation_studies.py
 ```
 
-覆盖率：核心模块 **92%**。82 个测试全部通过。
+实际通过数量和覆盖率以本次运行结果为准。离线 CI 仅验证统一指标评分器，完整测试需要额外依赖、数据与服务。
 
 ---
 
@@ -349,14 +339,16 @@ python evaluation/ablation_studies.py
 | 文档 | 内容说明 |
 |------|----------|
 | [RAGAS 评测报告](docs/RAGAS_EVALUATION_REPORT.md) | 方法论、全部评分、生产级门控逻辑、问题与修复 |
-| [架构概览](docs/ARCHITECTURE_OVERVIEW.md) | Agent 分层结构、数据流、组件交互 |
+| [架构概览](docs/WORKFLOW_ARCHITECTURE.md) | Agent 分层结构、数据流、组件交互 |
 | [消融实验报告](docs/ABLATION_REPORT.md) | 各子系统的量化影响 |
-| [项目概览](docs/PROJECT_OVERVIEW_CONCISE.md) | 高层总结 |
+| [项目概览](docs/FINAL_REPORT.md) | 高层总结 |
 | [用户指南](docs/USER_GUIDE.md) | 使用说明 |
 
 ---
 
-## 开发时间线
+## 开发时间线（历史记录）
+
+下表准确率为历史开发笔记，缺少完整可复现实验配置，不能用作方案间比较；原始记录保留用于追溯。
 
 | 阶段 | 周数 | 交付内容 | 准确率 |
 |------|:----:|----------|:------:|
